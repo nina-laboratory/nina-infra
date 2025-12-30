@@ -1,4 +1,4 @@
 resource "azurerm_resource_group" "main" {
-  name     = "nina-infra-rg"
-  location = "Germany West Central"
+  name     = "nina-labs"
+  location = var.location
 }
