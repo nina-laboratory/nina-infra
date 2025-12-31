@@ -13,3 +13,15 @@ output "acr_login_server" {
 output "app_urls" {
   value = { for k, v in azurerm_container_app.apps : k => "https://${v.latest_revision_fqdn}" }
 }
+
+output "oidc_client_id" {
+  value = azuread_application.github_oidc.application_id
+}
+
+output "oidc_tenant_id" {
+  value = azuread_service_principal.github_oidc.application_tenant_id
+}
+
+output "oidc_subscription_id" {
+  value = var.subscription_id
+}

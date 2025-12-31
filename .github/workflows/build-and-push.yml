@@ -1,0 +1,135 @@
+name: Build and Push Docker Images
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docker-build-config.json'
+      - '.github/workflows/build-and-push.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      build_id: ${{ steps.generate-id.outputs.build_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: generate-id
+        run: echo "build_id=$(openssl rand -hex 4)" >> $GITHUB_OUTPUT
+      - id: set-matrix
+        run: |
+          echo "matrix=$(jq -c . docker-build-config.json)" >> $GITHUB_OUTPUT
+
+  build-and-test:
+    needs: prepare-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+    steps:
+      - name: Checkout Infra Repo
+        uses: actions/checkout@v4
+      
+      - name: Checkout Target Repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repo }}
+          token: ${{ secrets.GH_PAT }}
+          path: target-repo
+
+      - name: Setup Bun
+        if: ${{ matrix.run_e2e || matrix.upload_artifact_path }}
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install Dependencies
+        if: ${{ matrix.run_e2e || matrix.upload_artifact_path }}
+        working-directory: target-repo
+        run: bun install
+
+      - name: Run E2E Tests
+        if: ${{ matrix.run_e2e == true }}
+        working-directory: target-repo
+        run: bun run e2e
+
+      - name: Build Artifact (CLI)
+        if: ${{ matrix.upload_artifact_path }}
+        working-directory: target-repo
+        run: |
+            # Check if a specific build script is needed, otherwise default to 'build'
+            # For nina-cli user mentioned: "bun build --compile --minify --sourcemap ./index.ts --outfile nina"
+            # Assuming this is mapped to 'bun run build' in package.json
+            bun run build
+
+      - name: Upload Artifact
+        if: ${{ matrix.upload_artifact_path }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: target-repo/${{ matrix.upload_artifact_path }}
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to ACR
+        run: |
+          az acr login --name ninainfraacr
+
+      - name: Build and Push Docker Image
+        id: docker_build
+        working-directory: target-repo
+        run: |
+          IMAGE_TAG="${{ needs.prepare-matrix.outputs.build_id }}"
+          FULL_IMAGE_NAME="ninainfraacr.azurecr.io/${{ matrix.image_name }}:${IMAGE_TAG}"
+          
+          echo "Building $FULL_IMAGE_NAME"
+          docker build . -f ${{ matrix.dockerfile }} -t $FULL_IMAGE_NAME
+          docker push $FULL_IMAGE_NAME
+          
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "full_image_name=$FULL_IMAGE_NAME" >> $GITHUB_OUTPUT
+
+      - name: Save Tag to File
+        run: |
+          echo "{\""${{ matrix.image_name }}"\": \""${{ steps.docker_build.outputs.image_tag }}"\"}" > image_tag_${{ matrix.image_name }}.json
+
+      - name: Upload Tag Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tag-${{ matrix.image_name }}
+          path: image_tag_${{ matrix.image_name }}.json
+
+  consolidate-tags:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: tag-*
+          merge-multiple: true
+          path: tags
+
+      - name: Consolidate Tags
+        run: |
+          jq -s 'add' tags/*.json > generated_tags.json
+          cat generated_tags.json
+
+      - name: Upload Final Tags
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated_tags
+          path: generated_tags.json

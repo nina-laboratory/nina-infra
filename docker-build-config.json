@@ -1,0 +1,23 @@
+[
+  {
+    "repo": "nina-labs/nina-web-apps",
+    "image_name": "nina-fit",
+    "dockerfile": "Dockerfile.nina-fit",
+    "context": ".",
+    "run_e2e": false
+  },
+  {
+    "repo": "nina-labs/nina-web-apps",
+    "image_name": "nina-journal",
+    "dockerfile": "Dockerfile.nina-journal",
+    "context": ".",
+    "run_e2e": false
+  },
+  {
+    "repo": "nina-labs/nina-web-apps",
+    "image_name": "nina-quick",
+    "dockerfile": "Dockerfile.nina-quick",
+    "context": ".",
+    "run_e2e": false
+  }
+]
