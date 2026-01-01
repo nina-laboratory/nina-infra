@@ -12,10 +12,10 @@ resource "azuread_service_principal" "github_oidc" {
 resource "azuread_application_federated_identity_credential" "github_oidc" {
   application_object_id = azuread_application.github_oidc.object_id
   display_name          = "nina-infra-main-branch"
-  description           = "Trusts GitHub Action on main branch of nina-labs/nina-infra"
+  description           = "Trusts GitHub Action on main branch of nina-laboratory/nina-infra"
   audiences             = ["api://AzureADTokenExchange"]
   issuer                = "https://token.actions.githubusercontent.com"
-  subject               = "repo:nina-labs/nina-infra:ref:refs/heads/main"
+  subject               = "repo:nina-laboratory/nina-infra:ref:refs/heads/main"
 }
 
 # Assign AcrPush role to the Service Principal
