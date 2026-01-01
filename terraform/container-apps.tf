@@ -51,7 +51,7 @@ resource "azurerm_container_app" "apps" {
   template {
     container {
       name   = "${each.key}-container"
-      image  = lookup(var.app_images, each.key, var.default_image)
+      image  = "${azurerm_container_registry.main.login_server}/nina-${each.key}:${lookup(var.image_tags, each.key, "latest")}"
       cpu    = 0.25
       memory = "0.5Gi"
     }
