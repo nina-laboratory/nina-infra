@@ -33,9 +33,10 @@ resource "azurerm_container_app" "apps" {
   }
 
   ingress {
-    external_enabled = true
-    target_port      = 80
-    transport        = "auto"
+    external_enabled           = true
+    target_port                = 80
+    transport                  = "auto"
+    allow_insecure_connections = true
 
     traffic_weight {
       percentage      = 100
@@ -57,8 +58,13 @@ resource "azurerm_container_app" "apps" {
     }
   }
 
-  # Note: Custom domains need to be added here or manually verifying 
-  # DNS txt records first. Terraform will fail if the verification DNS 
-  # records are not present when applying.
-  # We probably want to output the verification token so the user can add it.
 }
+
+resource "azurerm_container_app_custom_domain" "domains" {
+  for_each = var.apps
+
+  name                     = "${each.key}.${var.domain_name}"
+  container_app_id         = azurerm_container_app.apps[each.key].id
+  certificate_binding_type = "Auto"
+}
+
