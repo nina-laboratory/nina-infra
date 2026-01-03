@@ -26,3 +26,26 @@ variable "image_tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "google_client_id" {
+  description = "Google Client ID"
+  type        = string
+  sensitive   = true
+}
+
+variable "google_client_secret" {
+  description = "Google Client Secret"
+  type        = string
+  sensitive   = true
+}
+
+variable "nextauth_url" {
+  description = "NextAuth URL"
+  type        = string
+}
+
+variable "nextauth_secret" {
+  description = "NextAuth Secret"
+  type        = string
+  sensitive   = true
+}

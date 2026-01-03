@@ -11,7 +11,7 @@ output "acr_login_server" {
 }
 
 output "app_urls" {
-  value = { for k, v in azurerm_container_app.apps : k => "https://${v.latest_revision_fqdn}" }
+  value = { for k, v in azurerm_container_app.apps : k => "https://${v.ingress[0].fqdn}" }
 }
 
 output "oidc_client_id" {

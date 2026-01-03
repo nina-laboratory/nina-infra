@@ -49,12 +49,50 @@ resource "azurerm_container_app" "apps" {
     identity = azurerm_user_assigned_identity.app_identity.id
   }
 
+  secret {
+    name                = "google-client-id"
+    key_vault_secret_id = azurerm_key_vault_secret.google_client_id.id
+    identity            = azurerm_user_assigned_identity.app_identity.id
+  }
+  secret {
+    name                = "google-client-secret"
+    key_vault_secret_id = azurerm_key_vault_secret.google_client_secret.id
+    identity            = azurerm_user_assigned_identity.app_identity.id
+  }
+  secret {
+    name                = "nextauth-url"
+    key_vault_secret_id = azurerm_key_vault_secret.nextauth_url.id
+    identity            = azurerm_user_assigned_identity.app_identity.id
+  }
+  secret {
+    name                = "nextauth-secret"
+    key_vault_secret_id = azurerm_key_vault_secret.nextauth_secret.id
+    identity            = azurerm_user_assigned_identity.app_identity.id
+  }
+
   template {
     container {
       name   = "${each.key}-container"
       image  = "${azurerm_container_registry.main.login_server}/nina-${each.key}:${lookup(var.image_tags, each.key, "latest")}"
       cpu    = 0.25
       memory = "0.5Gi"
+
+      env {
+        name        = "GOOGLE_CLIENT_ID"
+        secret_name = "google-client-id"
+      }
+      env {
+        name        = "GOOGLE_CLIENT_SECRET"
+        secret_name = "google-client-secret"
+      }
+      env {
+        name        = "NEXTAUTH_URL"
+        secret_name = "nextauth-url"
+      }
+      env {
+        name        = "NEXTAUTH_SECRET"
+        secret_name = "nextauth-secret"
+      }
     }
   }
 
@@ -65,6 +103,6 @@ resource "azurerm_container_app_custom_domain" "domains" {
 
   name                     = "${each.key}.${var.domain_name}"
   container_app_id         = azurerm_container_app.apps[each.key].id
-  certificate_binding_type = "Auto"
+  certificate_binding_type = "SniEnabled"
 }
 

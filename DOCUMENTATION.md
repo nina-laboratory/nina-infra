@@ -9,3 +9,5 @@
 - Container Apps
 - No CI/CD, just manual
 - Container Registry
+- Azure Key Vault for secret management
+- Managed Identity configuration
