@@ -15,7 +15,7 @@ output "app_urls" {
 }
 
 output "oidc_client_id" {
-  value = azuread_application.github_oidc.application_id
+  value = azuread_application.github_oidc.client_id
 }
 
 output "oidc_tenant_id" {

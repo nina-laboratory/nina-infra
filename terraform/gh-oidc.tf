@@ -5,17 +5,17 @@ resource "azuread_application" "github_oidc" {
 
 # Service Principal for the Application
 resource "azuread_service_principal" "github_oidc" {
-  application_id = azuread_application.github_oidc.application_id
+  client_id = azuread_application.github_oidc.client_id
 }
 
 # Federated Credential trusting the GitHub Repo
 resource "azuread_application_federated_identity_credential" "github_oidc" {
-  application_object_id = azuread_application.github_oidc.object_id
-  display_name          = "nina-infra-main-branch"
-  description           = "Trusts GitHub Action on main branch of nina-laboratory/nina-infra"
-  audiences             = ["api://AzureADTokenExchange"]
-  issuer                = "https://token.actions.githubusercontent.com"
-  subject               = "repo:nina-laboratory/nina-infra:ref:refs/heads/main"
+  application_id = azuread_application.github_oidc.id
+  display_name   = "nina-infra-main-branch"
+  description    = "Trusts GitHub Action on main branch of nina-laboratory/nina-infra"
+  audiences      = ["api://AzureADTokenExchange"]
+  issuer         = "https://token.actions.githubusercontent.com"
+  subject        = "repo:nina-laboratory/nina-infra:ref:refs/heads/main"
 }
 
 # Assign AcrPush role to the Service Principal
