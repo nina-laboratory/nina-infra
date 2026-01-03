@@ -93,6 +93,10 @@ resource "azurerm_container_app" "apps" {
         name        = "NEXTAUTH_SECRET"
         secret_name = "nextauth-secret"
       }
+      env {
+        name  = "AZURE_CLIENT_ID"
+        value = azurerm_user_assigned_identity.app_identity.client_id
+      }
     }
   }
 
